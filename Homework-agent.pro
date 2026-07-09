@@ -47,6 +47,11 @@ HEADERS += \
     ui/statspage.h \
     ui/taskpage.h
 
+DISTFILES += \
+    .env \
+    README.md \
+    sql/init.sql
+
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
