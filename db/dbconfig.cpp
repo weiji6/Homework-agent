@@ -24,11 +24,13 @@ bool DbConfig::load(DbConfig *config, QString *errorMessage)
         return false;
     }
 
+    config->driver = EnvLoader::value(values, QStringLiteral("DB_DRIVER"), config->driver).trimmed();
     config->host = EnvLoader::value(values, QStringLiteral("DB_HOST"), config->host).trimmed();
     config->port = EnvLoader::value(values, QStringLiteral("DB_PORT"), QString::number(config->port)).toInt();
     config->databaseName = EnvLoader::value(values, QStringLiteral("DB_NAME"), config->databaseName).trimmed();
     config->username = EnvLoader::value(values, QStringLiteral("DB_USER"), config->username).trimmed();
     config->password = EnvLoader::value(values, QStringLiteral("DB_PASSWORD"), config->password);
+    config->odbcDriver = EnvLoader::value(values, QStringLiteral("DB_ODBC_DRIVER"), config->odbcDriver).trimmed();
     config->filePath = filePath;
 
     if (config->host.isEmpty() || config->databaseName.isEmpty() || config->username.isEmpty() || config->port <= 0) {

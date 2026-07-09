@@ -4,6 +4,33 @@
 #include <QSqlQuery>
 #include <QStringList>
 
+static QString resolveDriver(const QString &configuredDriver)
+{
+    const QString driver = configuredDriver.trimmed();
+    const QStringList drivers = QSqlDatabase::drivers();
+    if (driver.compare(QStringLiteral("auto"), Qt::CaseInsensitive) != 0 && drivers.contains(driver)) {
+        return driver;
+    }
+    if (drivers.contains(QStringLiteral("QMYSQL"))) {
+        return QStringLiteral("QMYSQL");
+    }
+    if (drivers.contains(QStringLiteral("QODBC"))) {
+        return QStringLiteral("QODBC");
+    }
+    return driver;
+}
+
+static QString makeOdbcConnectionString(const QString &odbcDriver,
+                                        const QString &host,
+                                        int port,
+                                        const QString &databaseName,
+                                        const QString &username,
+                                        const QString &password)
+{
+    return QStringLiteral("DRIVER={%1};SERVER=%2;PORT=%3;DATABASE=%4;UID=%5;PWD=%6;OPTION=3;")
+        .arg(odbcDriver, host, QString::number(port), databaseName, username, password);
+}
+
 DbManager &DbManager::instance()
 {
     static DbManager manager;
@@ -15,33 +42,51 @@ DbManager::DbManager(QObject *parent)
 {
 }
 
-bool DbManager::connectToDatabase(const QString &host,
+bool DbManager::connectToDatabase(const QString &driver,
+                                  const QString &host,
                                   int port,
                                   const QString &databaseName,
                                   const QString &username,
                                   const QString &password,
+                                  const QString &odbcDriver,
                                   QString *errorMessage)
 {
+    const QString resolvedDriver = resolveDriver(driver);
+    if (!QSqlDatabase::drivers().contains(resolvedDriver)) {
+        m_lastError = QStringLiteral("当前 Qt 没有可用的 %1 驱动。可用驱动：%2")
+                          .arg(resolvedDriver, QSqlDatabase::drivers().join(QStringLiteral(", ")));
+        if (errorMessage) {
+            *errorMessage = m_lastError;
+        }
+        return false;
+    }
+
     const QString connectionName = QStringLiteral("smart_study_connection");
     if (QSqlDatabase::contains(connectionName)) {
-        m_database = QSqlDatabase::database(connectionName);
+        if (m_database.isOpen()) {
+            m_database.close();
+        }
+        m_database = QSqlDatabase();
+        QSqlDatabase::removeDatabase(connectionName);
+    }
+
+    m_database = QSqlDatabase::addDatabase(resolvedDriver, connectionName);
+
+    if (resolvedDriver == QStringLiteral("QODBC")) {
+        m_database.setDatabaseName(makeOdbcConnectionString(odbcDriver, host, port, databaseName, username, password));
     } else {
-        m_database = QSqlDatabase::addDatabase(QStringLiteral("QMYSQL"), connectionName);
+        m_database.setHostName(host);
+        m_database.setPort(port);
+        m_database.setDatabaseName(databaseName);
+        m_database.setUserName(username);
+        m_database.setPassword(password);
+        if (resolvedDriver == QStringLiteral("QMYSQL")) {
+            m_database.setConnectOptions(QStringLiteral("MYSQL_OPT_RECONNECT=1"));
+        }
     }
-
-    if (m_database.isOpen()) {
-        m_database.close();
-    }
-
-    m_database.setHostName(host);
-    m_database.setPort(port);
-    m_database.setDatabaseName(databaseName);
-    m_database.setUserName(username);
-    m_database.setPassword(password);
-    m_database.setConnectOptions(QStringLiteral("MYSQL_OPT_RECONNECT=1"));
 
     if (!m_database.open()) {
-        m_lastError = m_database.lastError().text();
+        m_lastError = QStringLiteral("使用数据库驱动 %1 连接失败：%2").arg(resolvedDriver, m_database.lastError().text());
         if (errorMessage) {
             *errorMessage = m_lastError;
         }

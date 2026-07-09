@@ -12,11 +12,13 @@ class DbManager : public QObject
 public:
     static DbManager &instance();
 
-    bool connectToDatabase(const QString &host,
+    bool connectToDatabase(const QString &driver,
+                           const QString &host,
                            int port,
                            const QString &databaseName,
                            const QString &username,
                            const QString &password,
+                           const QString &odbcDriver,
                            QString *errorMessage = nullptr);
     bool initializeSchema(QString *errorMessage = nullptr);
     bool isOpen() const;

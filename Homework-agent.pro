@@ -49,6 +49,7 @@ HEADERS += \
 
 DISTFILES += \
     .env \
+    .env.example \
     README.md \
     sql/init.sql
 

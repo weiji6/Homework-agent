@@ -20,14 +20,16 @@
 CREATE DATABASE smart_study DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-3. 修改项目根目录 `.env` 中的配置。程序会从 `.env` 读取数据库连接和 Agent 配置，登录页不再输入数据库信息。
+3. 复制 `.env.example` 为 `.env`，再修改项目根目录 `.env` 中的配置。程序会从 `.env` 读取数据库连接和 Agent 配置，登录页不再输入数据库信息。
 
 ```env
+DB_DRIVER=auto
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_NAME=smart_study
 DB_USER=root
 DB_PASSWORD=
+DB_ODBC_DRIVER=MySQL ODBC 8.0 Unicode Driver
 
 LLM_API_KEY=
 LLM_API_URL=https://api.openai.com/v1/chat/completions
@@ -36,6 +38,8 @@ LLM_TEMPERATURE=0.3
 ```
 
 程序会自动创建表，也可以手动执行 `sql/init.sql`。
+
+如果启动时报 `can not load requested driver 'QMYSQL'`，说明当前 Qt 没有 MySQL 插件。保持 `DB_DRIVER=auto` 时，程序会优先用 `QMYSQL`，没有就尝试 `QODBC`。使用 `QODBC` 时需要系统安装 MySQL ODBC Driver，并确保 `DB_ODBC_DRIVER` 名称和 Windows ODBC 驱动名称一致。
 
 开发环境使用 shadow build 时，程序会依次查找：
 

@@ -100,11 +100,13 @@ bool LoginWindow::ensureDatabase()
         return false;
     }
 
-    const bool ok = DbManager::instance().connectToDatabase(config.host,
+    const bool ok = DbManager::instance().connectToDatabase(config.driver,
+                                                            config.host,
                                                             config.port,
                                                             config.databaseName,
                                                             config.username,
                                                             config.password,
+                                                            config.odbcDriver,
                                                             &error);
     if (!ok) {
         QMessageBox::critical(this,
