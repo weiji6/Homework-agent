@@ -1,22 +1,12 @@
 #include "dbconfig.h"
 
-#include <QCoreApplication>
-#include <QDir>
-#include <QFile>
-#include <QSettings>
+#include "config/envloader.h"
+
+#include <QMap>
 
 QStringList DbConfig::candidatePaths()
 {
-    const QString appDir = QCoreApplication::applicationDirPath();
-    const QString currentDir = QDir::currentPath();
-
-    QStringList paths;
-    paths << QDir(appDir).filePath(QStringLiteral("config/database.ini"));
-    paths << QDir(currentDir).filePath(QStringLiteral("config/database.ini"));
-    paths << QDir(currentDir).filePath(QStringLiteral("../../config/database.ini"));
-    paths << QDir(appDir).filePath(QStringLiteral("../../../config/database.ini"));
-    paths.removeDuplicates();
-    return paths;
+    return EnvLoader::candidatePaths();
 }
 
 bool DbConfig::load(DbConfig *config, QString *errorMessage)
@@ -28,36 +18,23 @@ bool DbConfig::load(DbConfig *config, QString *errorMessage)
         return false;
     }
 
-    QString configPath;
-    const QStringList paths = candidatePaths();
-    for (const QString &path : paths) {
-        if (QFile::exists(path)) {
-            configPath = QDir::cleanPath(path);
-            break;
-        }
-    }
-
-    if (configPath.isEmpty()) {
-        if (errorMessage) {
-            *errorMessage = QStringLiteral("未找到数据库配置文件。请创建 config/database.ini。\n尝试路径：\n%1")
-                                .arg(paths.join(QLatin1Char('\n')));
-        }
+    QMap<QString, QString> values;
+    QString filePath;
+    if (!EnvLoader::load(&values, &filePath, errorMessage)) {
         return false;
     }
 
-    QSettings settings(configPath, QSettings::IniFormat);
-    settings.beginGroup(QStringLiteral("mysql"));
-    config->host = settings.value(QStringLiteral("host"), config->host).toString().trimmed();
-    config->port = settings.value(QStringLiteral("port"), config->port).toInt();
-    config->databaseName = settings.value(QStringLiteral("database"), config->databaseName).toString().trimmed();
-    config->username = settings.value(QStringLiteral("username"), config->username).toString().trimmed();
-    config->password = settings.value(QStringLiteral("password"), config->password).toString();
-    settings.endGroup();
-    config->filePath = configPath;
+    config->host = EnvLoader::value(values, QStringLiteral("DB_HOST"), config->host).trimmed();
+    config->port = EnvLoader::value(values, QStringLiteral("DB_PORT"), QString::number(config->port)).toInt();
+    config->databaseName = EnvLoader::value(values, QStringLiteral("DB_NAME"), config->databaseName).trimmed();
+    config->username = EnvLoader::value(values, QStringLiteral("DB_USER"), config->username).trimmed();
+    config->password = EnvLoader::value(values, QStringLiteral("DB_PASSWORD"), config->password);
+    config->filePath = filePath;
 
     if (config->host.isEmpty() || config->databaseName.isEmpty() || config->username.isEmpty() || config->port <= 0) {
         if (errorMessage) {
-            *errorMessage = QStringLiteral("数据库配置不完整，请检查 %1 中的 host、port、database、username。").arg(configPath);
+            *errorMessage = QStringLiteral("数据库配置不完整，请检查 %1 中的 DB_HOST、DB_PORT、DB_NAME、DB_USER。")
+                                .arg(filePath);
         }
         return false;
     }

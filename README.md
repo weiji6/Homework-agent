@@ -20,32 +20,39 @@
 CREATE DATABASE smart_study DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-3. 修改 `config/database.ini` 中的 MySQL 连接信息。程序启动后会从该配置文件读取连接，登录页不再输入数据库信息。程序会自动创建表，也可以手动执行 `sql/init.sql`。
+3. 修改项目根目录 `.env` 中的配置。程序会从 `.env` 读取数据库连接和 Agent 配置，登录页不再输入数据库信息。
 
-```ini
-[mysql]
-host=127.0.0.1
-port=3306
-database=smart_study
-username=root
-password=
+```env
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=smart_study
+DB_USER=root
+DB_PASSWORD=
+
+LLM_API_KEY=
+LLM_API_URL=https://api.openai.com/v1/chat/completions
+LLM_MODEL=gpt-4o-mini
+LLM_TEMPERATURE=0.3
 ```
+
+程序会自动创建表，也可以手动执行 `sql/init.sql`。
 
 开发环境使用 shadow build 时，程序会依次查找：
 
-- 程序目录下的 `config/database.ini`
-- 当前工作目录下的 `config/database.ini`
-- 当前工作目录上两级的 `config/database.ini`
-- 程序目录上三级的 `config/database.ini`
+- 程序目录下的 `.env`
+- 当前工作目录下的 `.env`
+- 当前工作目录上两级的 `.env`
+- 程序目录上三级的 `.env`
 
 ## 大模型 API 配置
 
-AI 助手默认会在本地根据任务数据生成回答。需要接入大模型时，设置环境变量：
+AI 助手默认会在本地根据任务数据生成回答。需要接入大模型时，在 `.env` 里填写：
 
-```powershell
-$env:LLM_API_KEY="你的 API Key"
-$env:LLM_API_URL="https://api.openai.com/v1/chat/completions"
-$env:LLM_MODEL="gpt-4o-mini"
+```env
+LLM_API_KEY=你的 API Key
+LLM_API_URL=https://api.openai.com/v1/chat/completions
+LLM_MODEL=gpt-4o-mini
+LLM_TEMPERATURE=0.3
 ```
 
 `LLM_API_URL` 使用 OpenAI 兼容的 Chat Completions 接口即可。

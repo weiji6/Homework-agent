@@ -43,7 +43,7 @@ LoginWindow::LoginWindow(QWidget *parent)
     buttonLayout->addWidget(loginButton);
     buttonLayout->addWidget(registerButton);
 
-    m_dbStatusLabel = new QLabel(QStringLiteral("MySQL 连接信息从 config/database.ini 读取，登录页不再输入数据库配置。"));
+    m_dbStatusLabel = new QLabel(QStringLiteral("MySQL 连接信息从 .env 读取，登录页不再输入数据库配置。"));
     m_dbStatusLabel->setWordWrap(true);
 
     auto *layout = new QVBoxLayout(this);
@@ -109,7 +109,7 @@ bool LoginWindow::ensureDatabase()
     if (!ok) {
         QMessageBox::critical(this,
                               QStringLiteral("数据库连接失败"),
-                              QStringLiteral("请确认 MySQL 已启动、数据库已创建、Qt 已安装 QMYSQL 驱动，并检查配置文件：\n%1\n\n错误：%2")
+                              QStringLiteral("请确认 MySQL 已启动、数据库已创建、Qt 已安装 QMYSQL 驱动，并检查 .env：\n%1\n\n错误：%2")
                                   .arg(config.filePath, error));
     }
     return ok;

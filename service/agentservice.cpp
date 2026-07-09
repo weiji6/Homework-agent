@@ -1,5 +1,6 @@
 #include "agentservice.h"
 
+#include "config/envloader.h"
 #include "service/taskservice.h"
 
 #include <QJsonArray>
@@ -159,9 +160,15 @@ QString AgentService::localAnswer(Intent intent, const QVector<StudyTask> &tasks
 
 void AgentService::callLargeModel(const QString &prompt, const QString &fallbackAnswer)
 {
-    const QString apiKey = qEnvironmentVariable("LLM_API_KEY");
-    const QString apiUrl = qEnvironmentVariable("LLM_API_URL", "https://api.openai.com/v1/chat/completions");
-    const QString model = qEnvironmentVariable("LLM_MODEL", "gpt-4o-mini");
+    QMap<QString, QString> values;
+    EnvLoader::load(&values);
+
+    const QString apiKey = EnvLoader::value(values, QStringLiteral("LLM_API_KEY"));
+    const QString apiUrl = EnvLoader::value(values,
+                                            QStringLiteral("LLM_API_URL"),
+                                            QStringLiteral("https://api.openai.com/v1/chat/completions"));
+    const QString model = EnvLoader::value(values, QStringLiteral("LLM_MODEL"), QStringLiteral("gpt-4o-mini"));
+    const double temperature = EnvLoader::value(values, QStringLiteral("LLM_TEMPERATURE"), QStringLiteral("0.3")).toDouble();
 
     if (apiKey.isEmpty()) {
         emit answerReady(fallbackAnswer);
@@ -182,7 +189,7 @@ void AgentService::callLargeModel(const QString &prompt, const QString &fallback
 
     QJsonObject payload;
     payload.insert(QStringLiteral("model"), model);
-    payload.insert(QStringLiteral("temperature"), 0.3);
+    payload.insert(QStringLiteral("temperature"), temperature);
     payload.insert(QStringLiteral("messages"), QJsonArray{systemMessage, userMessage});
 
     QNetworkReply *reply = m_network.post(request, QJsonDocument(payload).toJson(QJsonDocument::Compact));
