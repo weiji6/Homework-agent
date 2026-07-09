@@ -1,10 +1,10 @@
 #include "loginwindow.h"
 
+#include "db/dbconfig.h"
 #include "db/dbmanager.h"
 #include "ui/mainwindow.h"
 
 #include <QFormLayout>
-#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
@@ -15,7 +15,7 @@ LoginWindow::LoginWindow(QWidget *parent)
     : QWidget(parent)
 {
     setWindowTitle(QStringLiteral("智能学习任务管理系统 - 登录"));
-    resize(460, 520);
+    resize(420, 320);
 
     auto *title = new QLabel(QStringLiteral("智能学习任务管理系统"));
     QFont titleFont = title->font();
@@ -43,22 +43,8 @@ LoginWindow::LoginWindow(QWidget *parent)
     buttonLayout->addWidget(loginButton);
     buttonLayout->addWidget(registerButton);
 
-    m_hostEdit = new QLineEdit(QStringLiteral("127.0.0.1"));
-    m_portEdit = new QLineEdit(QStringLiteral("3306"));
-    m_databaseEdit = new QLineEdit(QStringLiteral("smart_study"));
-    m_dbUserEdit = new QLineEdit(QStringLiteral("root"));
-    m_dbPasswordEdit = new QLineEdit;
-    m_dbPasswordEdit->setEchoMode(QLineEdit::Password);
-
-    auto *dbForm = new QFormLayout;
-    dbForm->addRow(QStringLiteral("主机"), m_hostEdit);
-    dbForm->addRow(QStringLiteral("端口"), m_portEdit);
-    dbForm->addRow(QStringLiteral("数据库"), m_databaseEdit);
-    dbForm->addRow(QStringLiteral("数据库用户"), m_dbUserEdit);
-    dbForm->addRow(QStringLiteral("数据库密码"), m_dbPasswordEdit);
-
-    auto *dbBox = new QGroupBox(QStringLiteral("MySQL 连接配置"));
-    dbBox->setLayout(dbForm);
+    m_dbStatusLabel = new QLabel(QStringLiteral("MySQL 连接信息从 config/database.ini 读取，登录页不再输入数据库配置。"));
+    m_dbStatusLabel->setWordWrap(true);
 
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(title);
@@ -66,7 +52,7 @@ LoginWindow::LoginWindow(QWidget *parent)
     layout->addLayout(accountForm);
     layout->addLayout(buttonLayout);
     layout->addSpacing(12);
-    layout->addWidget(dbBox);
+    layout->addWidget(m_dbStatusLabel);
     layout->addStretch();
 }
 
@@ -103,17 +89,28 @@ void LoginWindow::registerAccount()
 
 bool LoginWindow::ensureDatabase()
 {
+    if (DbManager::instance().isOpen()) {
+        return true;
+    }
+
     QString error;
-    const bool ok = DbManager::instance().connectToDatabase(m_hostEdit->text().trimmed(),
-                                                            m_portEdit->text().toInt(),
-                                                            m_databaseEdit->text().trimmed(),
-                                                            m_dbUserEdit->text().trimmed(),
-                                                            m_dbPasswordEdit->text(),
+    DbConfig config;
+    if (!DbConfig::load(&config, &error)) {
+        QMessageBox::critical(this, QStringLiteral("数据库配置错误"), error);
+        return false;
+    }
+
+    const bool ok = DbManager::instance().connectToDatabase(config.host,
+                                                            config.port,
+                                                            config.databaseName,
+                                                            config.username,
+                                                            config.password,
                                                             &error);
     if (!ok) {
         QMessageBox::critical(this,
                               QStringLiteral("数据库连接失败"),
-                              QStringLiteral("请确认 MySQL 已启动、数据库已创建，并且 Qt 安装了 QMYSQL 驱动。\n\n错误：%1").arg(error));
+                              QStringLiteral("请确认 MySQL 已启动、数据库已创建、Qt 已安装 QMYSQL 驱动，并检查配置文件：\n%1\n\n错误：%2")
+                                  .arg(config.filePath, error));
     }
     return ok;
 }

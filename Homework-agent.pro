@@ -7,6 +7,7 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    db/dbconfig.cpp \
     db/dbmanager.cpp \
     main.cpp \
     service/agentservice.cpp \
@@ -24,6 +25,7 @@ SOURCES += \
     ui/taskpage.cpp
 
 HEADERS += \
+    db/dbconfig.h \
     db/dbmanager.h \
     model/course.h \
     model/note.h \

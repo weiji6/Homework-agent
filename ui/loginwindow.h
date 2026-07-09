@@ -3,6 +3,7 @@
 
 #include "service/userservice.h"
 
+#include <QLabel>
 #include <QLineEdit>
 #include <QWidget>
 
@@ -21,11 +22,7 @@ private:
     bool ensureDatabase();
     void openMainWindow(int userId, const QString &username);
 
-    QLineEdit *m_hostEdit = nullptr;
-    QLineEdit *m_portEdit = nullptr;
-    QLineEdit *m_databaseEdit = nullptr;
-    QLineEdit *m_dbUserEdit = nullptr;
-    QLineEdit *m_dbPasswordEdit = nullptr;
+    QLabel *m_dbStatusLabel = nullptr;
     QLineEdit *m_usernameEdit = nullptr;
     QLineEdit *m_passwordEdit = nullptr;
     UserService m_userService;

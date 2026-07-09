@@ -20,7 +20,23 @@
 CREATE DATABASE smart_study DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-3. 运行程序后，在登录页填写 MySQL 连接信息。程序会自动创建表，也可以手动执行 `sql/init.sql`。
+3. 修改 `config/database.ini` 中的 MySQL 连接信息。程序启动后会从该配置文件读取连接，登录页不再输入数据库信息。程序会自动创建表，也可以手动执行 `sql/init.sql`。
+
+```ini
+[mysql]
+host=127.0.0.1
+port=3306
+database=smart_study
+username=root
+password=
+```
+
+开发环境使用 shadow build 时，程序会依次查找：
+
+- 程序目录下的 `config/database.ini`
+- 当前工作目录下的 `config/database.ini`
+- 当前工作目录上两级的 `config/database.ini`
+- 程序目录上三级的 `config/database.ini`
 
 ## 大模型 API 配置
 
