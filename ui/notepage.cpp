@@ -14,7 +14,10 @@ NotePage::NotePage(int userId, QWidget *parent)
     , m_userId(userId)
 {
     auto *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(28, 24, 28, 24);
+    layout->setSpacing(14);
     auto *filters = new QHBoxLayout;
+    filters->setSpacing(10);
     m_courseFilter = new QComboBox;
     m_keywordEdit = new QLineEdit;
     m_keywordEdit->setPlaceholderText(QStringLiteral("搜索标题或内容"));
@@ -25,9 +28,12 @@ NotePage::NotePage(int userId, QWidget *parent)
     filters->addWidget(searchButton);
 
     auto *actions = new QHBoxLayout;
+    actions->setSpacing(10);
     auto *addButton = new QPushButton(QStringLiteral("添加笔记"));
     auto *editButton = new QPushButton(QStringLiteral("修改笔记"));
     auto *deleteButton = new QPushButton(QStringLiteral("删除笔记"));
+    addButton->setProperty("primary", true);
+    deleteButton->setProperty("danger", true);
     connect(addButton, &QPushButton::clicked, this, &NotePage::addNote);
     connect(editButton, &QPushButton::clicked, this, &NotePage::editNote);
     connect(deleteButton, &QPushButton::clicked, this, &NotePage::deleteNote);
@@ -42,6 +48,9 @@ NotePage::NotePage(int userId, QWidget *parent)
     m_table->setColumnHidden(5, true);
     m_table->setColumnHidden(6, true);
     m_table->horizontalHeader()->setStretchLastSection(true);
+    m_table->verticalHeader()->setVisible(false);
+    m_table->verticalHeader()->setDefaultSectionSize(38);
+    m_table->setAlternatingRowColors(true);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
 

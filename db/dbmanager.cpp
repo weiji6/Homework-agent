@@ -2,6 +2,7 @@
 
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSettings>
 #include <QStringList>
 
 static QString resolveDriver(const QString &configuredDriver)
@@ -29,6 +30,49 @@ static QString makeOdbcConnectionString(const QString &odbcDriver,
 {
     return QStringLiteral("DRIVER={%1};SERVER=%2;PORT=%3;DATABASE=%4;UID=%5;PWD=%6;OPTION=3;")
         .arg(odbcDriver, host, QString::number(port), databaseName, username, password);
+}
+
+static QStringList installedOdbcDrivers()
+{
+    QStringList drivers;
+
+    QSettings drivers64(QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\ODBC\\ODBCINST.INI\\ODBC Drivers"),
+                        QSettings::NativeFormat);
+    drivers << drivers64.allKeys();
+
+    QSettings drivers32(QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\ODBC\\ODBCINST.INI\\ODBC Drivers"),
+                        QSettings::NativeFormat);
+    drivers << drivers32.allKeys();
+
+    drivers.removeDuplicates();
+    return drivers;
+}
+
+static QString resolveOdbcDriverName(const QString &configuredDriver)
+{
+    const QString configured = configuredDriver.trimmed();
+    const QStringList drivers = installedOdbcDrivers();
+    if (drivers.contains(configured)) {
+        return configured;
+    }
+
+    QStringList mysqlDrivers;
+    for (const QString &driver : drivers) {
+        if (driver.contains(QStringLiteral("MySQL ODBC"), Qt::CaseInsensitive)) {
+            mysqlDrivers << driver;
+        }
+    }
+
+    for (const QString &driver : mysqlDrivers) {
+        if (driver.contains(QStringLiteral("Unicode"), Qt::CaseInsensitive)) {
+            return driver;
+        }
+    }
+    if (!mysqlDrivers.isEmpty()) {
+        return mysqlDrivers.first();
+    }
+
+    return configured;
 }
 
 DbManager &DbManager::instance()
@@ -73,7 +117,8 @@ bool DbManager::connectToDatabase(const QString &driver,
     m_database = QSqlDatabase::addDatabase(resolvedDriver, connectionName);
 
     if (resolvedDriver == QStringLiteral("QODBC")) {
-        m_database.setDatabaseName(makeOdbcConnectionString(odbcDriver, host, port, databaseName, username, password));
+        const QString actualOdbcDriver = resolveOdbcDriverName(odbcDriver);
+        m_database.setDatabaseName(makeOdbcConnectionString(actualOdbcDriver, host, port, databaseName, username, password));
     } else {
         m_database.setHostName(host);
         m_database.setPort(port);
@@ -86,7 +131,10 @@ bool DbManager::connectToDatabase(const QString &driver,
     }
 
     if (!m_database.open()) {
-        m_lastError = QStringLiteral("使用数据库驱动 %1 连接失败：%2").arg(resolvedDriver, m_database.lastError().text());
+        m_lastError = QStringLiteral("使用数据库驱动 %1 连接失败：%2\n已安装 ODBC 驱动：%3")
+                          .arg(resolvedDriver,
+                               m_database.lastError().text(),
+                               installedOdbcDrivers().join(QStringLiteral(", ")));
         if (errorMessage) {
             *errorMessage = m_lastError;
         }

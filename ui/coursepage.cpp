@@ -15,11 +15,16 @@ CoursePage::CoursePage(int userId, QWidget *parent)
     , m_userId(userId)
 {
     auto *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(28, 24, 28, 24);
+    layout->setSpacing(14);
     auto *actions = new QHBoxLayout;
+    actions->setSpacing(10);
     auto *addButton = new QPushButton(QStringLiteral("添加课程"));
     auto *editButton = new QPushButton(QStringLiteral("修改课程"));
     auto *deleteButton = new QPushButton(QStringLiteral("删除课程"));
     auto *refreshButton = new QPushButton(QStringLiteral("刷新"));
+    addButton->setProperty("primary", true);
+    deleteButton->setProperty("danger", true);
     connect(addButton, &QPushButton::clicked, this, &CoursePage::addCourse);
     connect(editButton, &QPushButton::clicked, this, &CoursePage::editCourse);
     connect(deleteButton, &QPushButton::clicked, this, &CoursePage::deleteCourse);
@@ -34,6 +39,9 @@ CoursePage::CoursePage(int userId, QWidget *parent)
     m_table->setColumnCount(7);
     m_table->setHorizontalHeaderLabels({QStringLiteral("ID"), QStringLiteral("课程名"), QStringLiteral("教师"), QStringLiteral("教室"), QStringLiteral("星期"), QStringLiteral("开始"), QStringLiteral("结束")});
     m_table->horizontalHeader()->setStretchLastSection(true);
+    m_table->verticalHeader()->setVisible(false);
+    m_table->verticalHeader()->setDefaultSectionSize(38);
+    m_table->setAlternatingRowColors(true);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
 

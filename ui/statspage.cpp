@@ -3,6 +3,7 @@
 #include "db/dbmanager.h"
 
 #include <QHeaderView>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QSqlQuery>
@@ -14,17 +15,42 @@ StatsPage::StatsPage(int userId, QWidget *parent)
     , m_userId(userId)
 {
     auto *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(28, 24, 28, 24);
+    layout->setSpacing(14);
+
+    auto *top = new QHBoxLayout;
+    auto *titleBox = new QVBoxLayout;
+    auto *title = new QLabel(QStringLiteral("数据统计"));
+    title->setObjectName(QStringLiteral("PageTitle"));
+    auto *subtitle = new QLabel(QStringLiteral("从状态、课程和优先级三个维度查看任务分布。"));
+    subtitle->setObjectName(QStringLiteral("MutedText"));
+    titleBox->addWidget(title);
+    titleBox->addWidget(subtitle);
+
     auto *refreshButton = new QPushButton(QStringLiteral("刷新统计"));
+    refreshButton->setProperty("primary", true);
     connect(refreshButton, &QPushButton::clicked, this, &StatsPage::refresh);
+    top->addLayout(titleBox);
+    top->addStretch();
+    top->addWidget(refreshButton);
+
     m_statusTable = new QTableWidget;
     m_courseTable = new QTableWidget;
     m_priorityTable = new QTableWidget;
-    layout->addWidget(refreshButton);
-    layout->addWidget(new QLabel(QStringLiteral("按状态统计")));
+
+    auto *statusLabel = new QLabel(QStringLiteral("按状态统计"));
+    statusLabel->setObjectName(QStringLiteral("SectionTitle"));
+    auto *courseLabel = new QLabel(QStringLiteral("每门课程任务数量"));
+    courseLabel->setObjectName(QStringLiteral("SectionTitle"));
+    auto *priorityLabel = new QLabel(QStringLiteral("按优先级统计"));
+    priorityLabel->setObjectName(QStringLiteral("SectionTitle"));
+
+    layout->addLayout(top);
+    layout->addWidget(statusLabel);
     layout->addWidget(m_statusTable);
-    layout->addWidget(new QLabel(QStringLiteral("每门课程任务数量")));
+    layout->addWidget(courseLabel);
     layout->addWidget(m_courseTable);
-    layout->addWidget(new QLabel(QStringLiteral("按优先级统计")));
+    layout->addWidget(priorityLabel);
     layout->addWidget(m_priorityTable);
     refresh();
 }
@@ -55,6 +81,11 @@ void StatsPage::fillQueryTable(QTableWidget *table, const QString &sql, const QV
     table->setColumnCount(2);
     table->setHorizontalHeaderLabels({QStringLiteral("分类"), QStringLiteral("数量")});
     table->setRowCount(0);
+    table->verticalHeader()->setVisible(false);
+    table->verticalHeader()->setDefaultSectionSize(36);
+    table->setAlternatingRowColors(true);
+    table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     while (query.next()) {
         const int row = table->rowCount();
         table->insertRow(row);

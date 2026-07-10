@@ -16,7 +16,10 @@ TaskPage::TaskPage(int userId, QWidget *parent)
     , m_userId(userId)
 {
     auto *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(28, 24, 28, 24);
+    layout->setSpacing(14);
     auto *filters = new QHBoxLayout;
+    filters->setSpacing(10);
     m_statusFilter = new QComboBox;
     m_statusFilter->addItem(QStringLiteral("全部状态"), QString());
     m_statusFilter->addItem(QStringLiteral("未完成"), QStringLiteral("未完成"));
@@ -32,10 +35,13 @@ TaskPage::TaskPage(int userId, QWidget *parent)
     filters->addWidget(refreshButton);
 
     auto *actions = new QHBoxLayout;
+    actions->setSpacing(10);
     auto *addButton = new QPushButton(QStringLiteral("添加任务"));
     auto *editButton = new QPushButton(QStringLiteral("修改任务"));
     auto *doneButton = new QPushButton(QStringLiteral("标记完成"));
     auto *deleteButton = new QPushButton(QStringLiteral("删除任务"));
+    addButton->setProperty("primary", true);
+    deleteButton->setProperty("danger", true);
     connect(addButton, &QPushButton::clicked, this, &TaskPage::addTask);
     connect(editButton, &QPushButton::clicked, this, &TaskPage::editTask);
     connect(doneButton, &QPushButton::clicked, this, &TaskPage::markDone);
@@ -51,6 +57,9 @@ TaskPage::TaskPage(int userId, QWidget *parent)
     m_table->setHorizontalHeaderLabels({QStringLiteral("ID"), QStringLiteral("标题"), QStringLiteral("课程"), QStringLiteral("类型"), QStringLiteral("截止时间"), QStringLiteral("状态"), QStringLiteral("优先级"), QStringLiteral("内容"), QStringLiteral("课程ID")});
     m_table->setColumnHidden(8, true);
     m_table->horizontalHeader()->setStretchLastSection(true);
+    m_table->verticalHeader()->setVisible(false);
+    m_table->verticalHeader()->setDefaultSectionSize(38);
+    m_table->setAlternatingRowColors(true);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
 

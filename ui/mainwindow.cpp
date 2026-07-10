@@ -7,6 +7,7 @@
 #include "ui/statspage.h"
 #include "ui/taskpage.h"
 
+#include <QButtonGroup>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -19,7 +20,7 @@ MainWindow::MainWindow(int userId, const QString &username, QWidget *parent)
     , m_username(username)
 {
     setWindowTitle(QStringLiteral("智能学习任务管理系统"));
-    resize(1180, 760);
+    resize(1220, 780);
 
     auto *central = new QWidget;
     auto *rootLayout = new QHBoxLayout(central);
@@ -27,14 +28,20 @@ MainWindow::MainWindow(int userId, const QString &username, QWidget *parent)
     rootLayout->setSpacing(0);
 
     auto *sidebar = new QFrame;
-    sidebar->setFixedWidth(190);
-    sidebar->setStyleSheet(QStringLiteral("QFrame { background: #263238; color: white; } QPushButton { text-align: left; padding: 12px; border: none; color: white; } QPushButton:hover { background: #37474f; } QLabel { color: white; padding: 12px; }"));
+    sidebar->setObjectName(QStringLiteral("Sidebar"));
+    sidebar->setFixedWidth(224);
     auto *sideLayout = new QVBoxLayout(sidebar);
-    sideLayout->setContentsMargins(0, 12, 0, 12);
+    sideLayout->setContentsMargins(18, 22, 18, 18);
+    sideLayout->setSpacing(10);
 
+    auto *appTitle = new QLabel(QStringLiteral("学习管家"));
+    appTitle->setObjectName(QStringLiteral("SidebarTitle"));
     auto *userLabel = new QLabel(QStringLiteral("你好，%1").arg(m_username));
+    userLabel->setObjectName(QStringLiteral("SidebarUser"));
     userLabel->setWordWrap(true);
+    sideLayout->addWidget(appTitle);
     sideLayout->addWidget(userLabel);
+    sideLayout->addSpacing(16);
 
     m_stack = new QStackedWidget;
     m_stack->addWidget(new DashboardPage(m_userId));
@@ -44,8 +51,10 @@ MainWindow::MainWindow(int userId, const QString &username, QWidget *parent)
     m_stack->addWidget(new StatsPage(m_userId));
     m_stack->addWidget(new AgentPage(m_userId));
 
+    auto *navGroup = new QButtonGroup(this);
+    navGroup->setExclusive(true);
     const QStringList labels = {
-        QStringLiteral("首页"),
+        QStringLiteral("首页仪表盘"),
         QStringLiteral("课程管理"),
         QStringLiteral("任务管理"),
         QStringLiteral("学习笔记"),
@@ -54,14 +63,21 @@ MainWindow::MainWindow(int userId, const QString &username, QWidget *parent)
     };
     for (int i = 0; i < labels.size(); ++i) {
         auto *button = new QPushButton(labels.at(i));
-        connect(button, &QPushButton::clicked, this, [this, i]() {
-            m_stack->setCurrentIndex(i);
-        });
+        button->setCheckable(true);
+        button->setCursor(Qt::PointingHandCursor);
+        navGroup->addButton(button, i);
         sideLayout->addWidget(button);
     }
+    if (auto *firstButton = navGroup->button(0)) {
+        firstButton->setChecked(true);
+    }
+    connect(navGroup, &QButtonGroup::idClicked, this, [this](int index) {
+        m_stack->setCurrentIndex(index);
+    });
 
     sideLayout->addStretch();
     auto *logoutButton = new QPushButton(QStringLiteral("退出登录"));
+    logoutButton->setCursor(Qt::PointingHandCursor);
     connect(logoutButton, &QPushButton::clicked, this, [this]() {
         close();
         emit loggedOut();

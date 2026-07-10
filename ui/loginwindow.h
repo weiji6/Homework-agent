@@ -22,7 +22,6 @@ private:
     bool ensureDatabase();
     void openMainWindow(int userId, const QString &username);
 
-    QLabel *m_dbStatusLabel = nullptr;
     QLineEdit *m_usernameEdit = nullptr;
     QLineEdit *m_passwordEdit = nullptr;
     UserService m_userService;

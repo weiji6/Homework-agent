@@ -18,6 +18,9 @@ public:
 
 signals:
     void answerReady(const QString &answer);
+    void answerStarted();
+    void answerChunkReady(const QString &chunk);
+    void answerFinished();
     void errorOccurred(const QString &message);
 
 private:
@@ -27,6 +30,7 @@ private:
         Pressure,
         Plan,
         Overdue,
+        Knowledge,
         General
     };
 
@@ -34,7 +38,10 @@ private:
     QString extractCourseKeyword(const QString &message) const;
     QString buildTaskSummary(const QVector<StudyTask> &tasks) const;
     QString localAnswer(Intent intent, const QVector<StudyTask> &tasks, const QString &message) const;
+    QString knowledgeFallback(const QString &message) const;
+    QString normalizeChatCompletionsUrl(const QString &apiUrl) const;
     void callLargeModel(const QString &prompt, const QString &fallbackAnswer);
+    void callLargeModelStream(const QString &prompt, const QString &fallbackAnswer);
 
     QNetworkAccessManager m_network;
 };
