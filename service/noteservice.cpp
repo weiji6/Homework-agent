@@ -1,6 +1,7 @@
 #include "noteservice.h"
 
 #include "db/dbmanager.h"
+#include "db/sqlexecutor.h"
 
 #include <QSqlError>
 #include <QSqlQuery>
@@ -26,21 +27,17 @@ QVector<Note> NoteService::listNotes(int userId, int courseId, const QString &ke
     sql += QStringLiteral(" ORDER BY n.updated_at DESC");
 
     QSqlQuery query(DbManager::instance().database());
-    query.prepare(sql);
-    query.addBindValue(userId);
+    QVariantList params = {userId};
     if (courseId > 0) {
-        query.addBindValue(courseId);
+        params.append(courseId);
     }
     if (!keyword.trimmed().isEmpty()) {
         const QString like = QStringLiteral("%%1%").arg(keyword.trimmed());
-        query.addBindValue(like);
-        query.addBindValue(like);
+        params.append(like);
+        params.append(like);
     }
 
-    if (!query.exec()) {
-        if (errorMessage) {
-            *errorMessage = query.lastError().text();
-        }
+    if (!SqlExecutor::exec(query, sql, params, errorMessage)) {
         return notes;
     }
 
@@ -62,19 +59,12 @@ QVector<Note> NoteService::listNotes(int userId, int courseId, const QString &ke
 bool NoteService::addNote(const Note &note, QString *errorMessage)
 {
     QSqlQuery query(DbManager::instance().database());
-    query.prepare(QStringLiteral("INSERT INTO note (user_id, course_id, title, content) VALUES (?, ?, ?, ?)"));
-    query.addBindValue(note.userId);
-    if (note.courseId > 0) {
-        query.addBindValue(note.courseId);
-    } else {
-        query.addBindValue(QVariant());
-    }
-    query.addBindValue(note.title);
-    query.addBindValue(note.content);
-    if (!query.exec()) {
-        if (errorMessage) {
-            *errorMessage = query.lastError().text();
-        }
+    const QVariant courseId = note.courseId > 0 ? QVariant(note.courseId) : QVariant();
+    const QVariantList params = {note.userId, courseId, note.title, note.content};
+    if (!SqlExecutor::exec(query,
+                           QStringLiteral("INSERT INTO note (user_id, course_id, title, content) VALUES (?, ?, ?, ?)"),
+                           params,
+                           errorMessage)) {
         return false;
     }
     return true;
@@ -83,20 +73,12 @@ bool NoteService::addNote(const Note &note, QString *errorMessage)
 bool NoteService::updateNote(const Note &note, QString *errorMessage)
 {
     QSqlQuery query(DbManager::instance().database());
-    query.prepare(QStringLiteral("UPDATE note SET course_id = ?, title = ?, content = ? WHERE id = ? AND user_id = ?"));
-    if (note.courseId > 0) {
-        query.addBindValue(note.courseId);
-    } else {
-        query.addBindValue(QVariant());
-    }
-    query.addBindValue(note.title);
-    query.addBindValue(note.content);
-    query.addBindValue(note.id);
-    query.addBindValue(note.userId);
-    if (!query.exec()) {
-        if (errorMessage) {
-            *errorMessage = query.lastError().text();
-        }
+    const QVariant courseId = note.courseId > 0 ? QVariant(note.courseId) : QVariant();
+    const QVariantList params = {courseId, note.title, note.content, note.id, note.userId};
+    if (!SqlExecutor::exec(query,
+                           QStringLiteral("UPDATE note SET course_id = ?, title = ?, content = ? WHERE id = ? AND user_id = ?"),
+                           params,
+                           errorMessage)) {
         return false;
     }
     return true;
@@ -105,13 +87,10 @@ bool NoteService::updateNote(const Note &note, QString *errorMessage)
 bool NoteService::removeNote(int noteId, int userId, QString *errorMessage)
 {
     QSqlQuery query(DbManager::instance().database());
-    query.prepare(QStringLiteral("DELETE FROM note WHERE id = ? AND user_id = ?"));
-    query.addBindValue(noteId);
-    query.addBindValue(userId);
-    if (!query.exec()) {
-        if (errorMessage) {
-            *errorMessage = query.lastError().text();
-        }
+    if (!SqlExecutor::exec(query,
+                           QStringLiteral("DELETE FROM note WHERE id = ? AND user_id = ?"),
+                           {noteId, userId},
+                           errorMessage)) {
         return false;
     }
     return true;

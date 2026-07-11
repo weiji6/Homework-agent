@@ -1,6 +1,7 @@
 #include "courseservice.h"
 
 #include "db/dbmanager.h"
+#include "db/sqlexecutor.h"
 
 #include <QSqlError>
 #include <QSqlQuery>
@@ -15,13 +16,9 @@ QVector<Course> CourseService::listCourses(int userId, QString *errorMessage) co
 {
     QVector<Course> courses;
     QSqlQuery query(DbManager::instance().database());
-    query.prepare(QStringLiteral("SELECT id, user_id, name, teacher, classroom, weekday, start_time, end_time "
-                                 "FROM course WHERE user_id = ? ORDER BY weekday, start_time, name"));
-    query.addBindValue(userId);
-    if (!query.exec()) {
-        if (errorMessage) {
-            *errorMessage = query.lastError().text();
-        }
+    const QString sql = QStringLiteral("SELECT id, user_id, name, teacher, classroom, weekday, start_time, end_time "
+                                       "FROM course WHERE user_id = ? ORDER BY weekday, start_time, name");
+    if (!SqlExecutor::exec(query, sql, {userId}, errorMessage)) {
         return courses;
     }
 
@@ -43,19 +40,11 @@ QVector<Course> CourseService::listCourses(int userId, QString *errorMessage) co
 bool CourseService::addCourse(const Course &course, QString *errorMessage)
 {
     QSqlQuery query(DbManager::instance().database());
-    query.prepare(QStringLiteral("INSERT INTO course (user_id, name, teacher, classroom, weekday, start_time, end_time) "
-                                 "VALUES (?, ?, ?, ?, ?, ?, ?)"));
-    query.addBindValue(course.userId);
-    query.addBindValue(course.name);
-    query.addBindValue(course.teacher);
-    query.addBindValue(course.classroom);
-    query.addBindValue(course.weekday);
-    query.addBindValue(course.startTime);
-    query.addBindValue(course.endTime);
-    if (!query.exec()) {
-        if (errorMessage) {
-            *errorMessage = query.lastError().text();
-        }
+    const QString sql = QStringLiteral("INSERT INTO course (user_id, name, teacher, classroom, weekday, start_time, end_time) "
+                                       "VALUES (?, ?, ?, ?, ?, ?, ?)");
+    const QVariantList params = {course.userId, course.name, course.teacher, course.classroom,
+                                 course.weekday, course.startTime, course.endTime};
+    if (!SqlExecutor::exec(query, sql, params, errorMessage)) {
         return false;
     }
     return true;
@@ -64,20 +53,11 @@ bool CourseService::addCourse(const Course &course, QString *errorMessage)
 bool CourseService::updateCourse(const Course &course, QString *errorMessage)
 {
     QSqlQuery query(DbManager::instance().database());
-    query.prepare(QStringLiteral("UPDATE course SET name = ?, teacher = ?, classroom = ?, weekday = ?, start_time = ?, end_time = ? "
-                                 "WHERE id = ? AND user_id = ?"));
-    query.addBindValue(course.name);
-    query.addBindValue(course.teacher);
-    query.addBindValue(course.classroom);
-    query.addBindValue(course.weekday);
-    query.addBindValue(course.startTime);
-    query.addBindValue(course.endTime);
-    query.addBindValue(course.id);
-    query.addBindValue(course.userId);
-    if (!query.exec()) {
-        if (errorMessage) {
-            *errorMessage = query.lastError().text();
-        }
+    const QString sql = QStringLiteral("UPDATE course SET name = ?, teacher = ?, classroom = ?, weekday = ?, start_time = ?, end_time = ? "
+                                       "WHERE id = ? AND user_id = ?");
+    const QVariantList params = {course.name, course.teacher, course.classroom, course.weekday,
+                                 course.startTime, course.endTime, course.id, course.userId};
+    if (!SqlExecutor::exec(query, sql, params, errorMessage)) {
         return false;
     }
     return true;
@@ -86,13 +66,10 @@ bool CourseService::updateCourse(const Course &course, QString *errorMessage)
 bool CourseService::removeCourse(int courseId, int userId, QString *errorMessage)
 {
     QSqlQuery query(DbManager::instance().database());
-    query.prepare(QStringLiteral("DELETE FROM course WHERE id = ? AND user_id = ?"));
-    query.addBindValue(courseId);
-    query.addBindValue(userId);
-    if (!query.exec()) {
-        if (errorMessage) {
-            *errorMessage = query.lastError().text();
-        }
+    if (!SqlExecutor::exec(query,
+                           QStringLiteral("DELETE FROM course WHERE id = ? AND user_id = ?"),
+                           {courseId, userId},
+                           errorMessage)) {
         return false;
     }
     return true;
@@ -101,9 +78,7 @@ bool CourseService::removeCourse(int courseId, int userId, QString *errorMessage
 QString CourseService::courseName(int courseId) const
 {
     QSqlQuery query(DbManager::instance().database());
-    query.prepare(QStringLiteral("SELECT name FROM course WHERE id = ?"));
-    query.addBindValue(courseId);
-    if (query.exec() && query.next()) {
+    if (SqlExecutor::exec(query, QStringLiteral("SELECT name FROM course WHERE id = ?"), {courseId}) && query.next()) {
         return query.value(0).toString();
     }
     return QString();

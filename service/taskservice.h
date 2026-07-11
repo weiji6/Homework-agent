@@ -4,6 +4,7 @@
 #include "model/task.h"
 
 #include <QObject>
+#include <QVariant>
 #include <QVector>
 
 class QSqlQuery;
@@ -29,7 +30,10 @@ public:
     int overdueCount(int userId) const;
 
 private:
-    QVector<StudyTask> readTasks(QSqlQuery &query, QString *errorMessage) const;
+    QVector<StudyTask> readTasks(QSqlQuery &query,
+                                 const QString &sql,
+                                 const QVariantList &params,
+                                 QString *errorMessage) const;
 };
 
 #endif // TASKSERVICE_H

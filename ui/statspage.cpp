@@ -1,6 +1,7 @@
 #include "statspage.h"
 
 #include "db/dbmanager.h"
+#include "db/sqlexecutor.h"
 
 #include <QHeaderView>
 #include <QHBoxLayout>
@@ -71,11 +72,7 @@ void StatsPage::refresh()
 void StatsPage::fillQueryTable(QTableWidget *table, const QString &sql, const QVariantList &params)
 {
     QSqlQuery query(DbManager::instance().database());
-    query.prepare(sql);
-    for (const QVariant &param : params) {
-        query.addBindValue(param);
-    }
-    query.exec();
+    SqlExecutor::exec(query, sql, params);
 
     table->clear();
     table->setColumnCount(2);

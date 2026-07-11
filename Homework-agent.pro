@@ -10,6 +10,7 @@ SOURCES += \
     config/envloader.cpp \
     db/dbconfig.cpp \
     db/dbmanager.cpp \
+    db/sqlexecutor.cpp \
     main.cpp \
     service/agentservice.cpp \
     service/courseservice.cpp \
@@ -29,6 +30,7 @@ HEADERS += \
     config/envloader.h \
     db/dbconfig.h \
     db/dbmanager.h \
+    db/sqlexecutor.h \
     model/course.h \
     model/note.h \
     model/task.h \

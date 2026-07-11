@@ -1,6 +1,7 @@
 #include "userservice.h"
 
 #include "db/dbmanager.h"
+#include "db/sqlexecutor.h"
 
 #include <QCryptographicHash>
 #include <QSqlError>
@@ -22,13 +23,10 @@ bool UserService::registerUser(const QString &username, const QString &password,
     }
 
     QSqlQuery query(DbManager::instance().database());
-    query.prepare(QStringLiteral("INSERT INTO `user` (username, password) VALUES (?, ?)"));
-    query.addBindValue(username.trimmed());
-    query.addBindValue(hashPassword(password));
-    if (!query.exec()) {
-        if (errorMessage) {
-            *errorMessage = query.lastError().text();
-        }
+    if (!SqlExecutor::exec(query,
+                           QStringLiteral("INSERT INTO `user` (username, password) VALUES (?, ?)"),
+                           {username.trimmed(), hashPassword(password)},
+                           errorMessage)) {
         return false;
     }
     return true;
@@ -37,13 +35,10 @@ bool UserService::registerUser(const QString &username, const QString &password,
 bool UserService::login(const QString &username, const QString &password, int *userId, QString *errorMessage)
 {
     QSqlQuery query(DbManager::instance().database());
-    query.prepare(QStringLiteral("SELECT id FROM `user` WHERE username = ? AND password = ?"));
-    query.addBindValue(username.trimmed());
-    query.addBindValue(hashPassword(password));
-    if (!query.exec()) {
-        if (errorMessage) {
-            *errorMessage = query.lastError().text();
-        }
+    if (!SqlExecutor::exec(query,
+                           QStringLiteral("SELECT id FROM `user` WHERE username = ? AND password = ?"),
+                           {username.trimmed(), hashPassword(password)},
+                           errorMessage)) {
         return false;
     }
 
@@ -70,14 +65,10 @@ bool UserService::changePassword(int userId, const QString &oldPassword, const Q
     }
 
     QSqlQuery query(DbManager::instance().database());
-    query.prepare(QStringLiteral("UPDATE `user` SET password = ? WHERE id = ? AND password = ?"));
-    query.addBindValue(hashPassword(newPassword));
-    query.addBindValue(userId);
-    query.addBindValue(hashPassword(oldPassword));
-    if (!query.exec()) {
-        if (errorMessage) {
-            *errorMessage = query.lastError().text();
-        }
+    if (!SqlExecutor::exec(query,
+                           QStringLiteral("UPDATE `user` SET password = ? WHERE id = ? AND password = ?"),
+                           {hashPassword(newPassword), userId, hashPassword(oldPassword)},
+                           errorMessage)) {
         return false;
     }
 
